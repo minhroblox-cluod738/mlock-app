@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- KHU VỰC CODE PWA ĐÃ ĐƯỢC CHÈN SẴN -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080505">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+
+<title>M LOCK DMINH - V2 Premium</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&family=Share+Tech+Mono&display=swap');
+:root{--bg:#080505;--cd:#140a0a;--rd:#ff1a1a;--rg:rgba(255,26,26,.4);--gr:#00ff88;--gd:#ffd700;--txt:#fff;--mut:#a37b7b}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Montserrat',sans-serif;-webkit-tap-highlight-color:transparent;user-select:none}
+body{background:var(--bg);color:var(--txt);display:flex;justify-content:center;min-height:100vh;overflow-x:hidden;background-image:radial-gradient(circle at 50% 0%,rgba(255,26,26,.1) 0%,transparent 50%)}
+
+/* --- TÂM ẢO (VIRTUAL AIM) --- */
+#va-overlay {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 120px; height: 120px; pointer-events: none; z-index: 99999;
+    display: none; opacity: 0; transition: opacity 0.3s ease;
+}
+#va-overlay.active { display: block; opacity: 1; animation: pulseAim 2s infinite; }
+.va-ring {
+    width: 100%; height: 100%; border: 2px solid var(--rd); border-radius: 50%;
+    box-shadow: 0 0 15px var(--rg), inset 0 0 15px var(--rg); position: relative;
+}
+.va-cross-h { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: var(--rd); transform: translateY(-50%); opacity: 0.6;}
+.va-cross-v { position: absolute; top: 0; left: 50%; width: 2px; height: 100%; background: var(--rd); transform: translateX(-50%); opacity: 0.6;}
+.va-dot { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px var(--rd); }
+@keyframes pulseAim { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.08); } 100% { transform: translate(-50%, -50%) scale(1); } }
+
+/* LOADING */
+#load{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:.5s}
+#load.hide{opacity:0;visibility:hidden}
+.ld-i{font-size:60px;color:var(--rd);text-shadow:0 0 20px var(--rg);margin-bottom:20px;animation:spin 2s linear infinite}
+@keyframes spin{100%{transform:rotate(360deg)}}
+.ld-bg{width:70%;max-width:300px;height:6px;background:#2a1515;border-radius:10px;overflow:hidden;border:1px solid #8e0e00;margin-top:15px}
+.ld-fl{height:100%;width:0%;background:linear-gradient(90deg,var(--rd),var(--gd));box-shadow:0 0 10px var(--rg);transition:.1s}
+.ld-p{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--mut);margin-top:10px}
+
+/* PASS */
+#pass-sc{position:fixed;inset:0;background:var(--bg);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:.5s}
+#pass-sc.hide{opacity:0;visibility:hidden}
+.ps-bx{background:var(--cd);border:1px solid var(--rd);padding:30px;border-radius:16px;text-align:center;width:85%;max-width:320px;box-shadow:0 0 30px rgba(255,26,26,.2)}
+.ps-bx h2{font-size:18px;margin-bottom:20px;text-transform:uppercase}
+.ps-in{width:100%;background:#050202;border:1px solid #333;color:#fff;padding:12px;border-radius:8px;margin-bottom:15px;outline:none;text-align:center;font-family:'Share Tech Mono',monospace}
+.btn-ps{width:100%;background:var(--rd);color:#fff;border:none;padding:12px;border-radius:8px;font-weight:bold;cursor:pointer}
+
+/* INJECT */
+#inj{position:fixed;inset:0;background:rgba(5,2,2,.95);z-index:8000;display:none;flex-direction:column;padding:20px;font-family:'Share Tech Mono',monospace;color:var(--gr);overflow:hidden}
+#inj.act{display:flex}
+.mtx{font-size:12px;line-height:1.5;text-shadow:0 0 5px var(--gr)}
+.inj-ok{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.8);border:2px solid var(--gr);padding:20px 40px;border-radius:10px;text-align:center;display:none;box-shadow:0 0 30px var(--gr)}
+.inj-ok h2{color:var(--gr);font-size:20px;margin-bottom:10px}
+
+/* MAIN APP */
+.app{width:100%;max-width:450px;background:var(--bg);position:relative;display:flex;flex-direction:column;opacity:0;transition:.5s}
+.app.show{opacity:1}
+.nav{display:flex;justify-content:space-between;background:var(--cd);padding:10px 5px;border-bottom:1px solid rgba(255,26,26,.2);position:sticky;top:0;z-index:100}
+.nav-b{display:flex;flex-direction:column;align-items:center;color:var(--mut);font-size:9px;font-weight:700;padding:5px 8px;border-radius:15px;cursor:pointer;flex:1}
+.nav-b i{font-size:16px;margin-bottom:4px}
+.nav-b.act{background:linear-gradient(135deg,var(--rd),#8e0e00);color:#fff;box-shadow:0 0 10px var(--rg)}
+.nav-b.prem.act{background:linear-gradient(135deg,var(--gd),#b8860b);box-shadow:0 0 10px var(--gd)}
+
+/* LOGO */
+.logo{text-align:center;padding:25px 0 15px}
+.lg-c{width:75px;height:75px;border:2px dashed var(--rd);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--rd);box-shadow:0 0 20px var(--rg),inset 0 0 15px var(--rg);animation:spin 8s linear infinite}
+.lg-t{font-size:22px;font-weight:900;text-transform:uppercase}
+.lg-t span{color:var(--rd);text-shadow:0 0 10px var(--rg)}
+.lg-v{font-size:11px;color:var(--mut);margin-top:5px}
+
+/* TABS & CARDS */
+.tab{display:none;padding:15px;animation:fd .4s ease}
+.tab.act{display:block}
+@keyframes fd{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.sec-t{font-size:14px;font-weight:800;color:var(--rd);margin-bottom:15px;display:flex;align-items:center;gap:8px;text-transform:uppercase}
+.cd{background:var(--cd);border:1px solid rgba(255,26,26,.15);border-radius:12px;padding:15px;margin-bottom:15px}
+
+/* FUNCTION GRID */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.f-c{background:var(--cd);border:1px solid rgba(255,26,26,.15);border-radius:12px;padding:12px;position:relative}
+.f-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.f-t{font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px}
+.f-t i{color:var(--rd);font-size:14px}
+.f-d{font-size:10px;color:var(--mut)}
+.f-s{font-size:10px;font-weight:800;color:#555;position:absolute;bottom:12px;right:12px}
+.f-s.on{color:var(--rd);text-shadow:0 0 5px var(--rg)}
+
+/* TOGGLE */
+.sw{position:relative;width:38px;height:20px}
+.sw input{opacity:0;width:0;height:0}
+.sl{position:absolute;inset:0;cursor:pointer;background:#2a1515;transition:.4s;border-radius:20px}
+.sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;transition:.4s;border-radius:50%}
+input:checked+.sl{background:var(--rd);box-shadow:0 0 10px var(--rg)}
+input:checked+.sl:before{transform:translateX(18px)}
+
+/* SLIDERS */
+.sl-g{margin-bottom:20px}
+.sl-h{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:8px}
+.sl-v{color:var(--rd);font-family:'Share Tech Mono',monospace}
+input[type=range]{-webkit-appearance:none;width:100%;background:transparent}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:20px;width:20px;border-radius:50%;background:var(--rd);cursor:pointer;margin-top:-8px;box-shadow:0 0 10px var(--rg);border:2px solid #fff}
+input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;background:#2a1515;border-radius:2px}
+
+/* FLEATIME */
+.sel-g{margin-bottom:15px}
+.sel-l{font-size:12px;font-weight:700;color:var(--mut);margin-bottom:8px}
+.sel-b{width:100%;background:var(--cd);border:1px solid rgba(255,26,26,.3);color:var(--txt);padding:12px;border-radius:8px;font-size:13px;outline:none;appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff1a1a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 10px center;background-size:15px}
+.stats{display:flex;justify-content:space-between;margin-bottom:15px}
+.st{flex:1;text-align:center}
+.st-t{font-size:11px;color:var(--mut);text-transform:uppercase}
+.st-v{font-size:28px;font-weight:800;color:var(--rd);font-family:'Share Tech Mono',monospace;transition:.3s}
+.acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px}
+.act-b{background:var(--cd);border:1px solid rgba(255,26,26,.2);color:var(--mut);padding:12px 5px;border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:.3s}
+.act-b i{font-size:16px}
+.act-b.load{border-color:var(--gr);color:var(--gr);pointer-events:none}
+.act-b.lock{border-color:var(--gd);color:var(--gd);box-shadow:0 0 10px rgba(255,215,0,.3)}
+.cons{background:#030101;border:1px solid #2a0c0c;border-radius:10px;padding:15px;height:180px;overflow-y:auto;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.6;color:#888;margin-bottom:20px}
+.l-t{color:#555}
+.l-s{color:var(--gr)}
+.l-w{color:var(--gd)}
+.bst-g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:15px}
+.bst{background:var(--cd);border:1px solid rgba(255,26,26,.2);color:var(--txt);padding:12px 5px;border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px}
+.bst i{font-size:16px;color:var(--rd)}
+.bst.act{border-color:var(--rd);background:rgba(255,26,26,.1)}
+.btn-go{width:100%;background:transparent;border:1px solid var(--rd);color:var(--rd);padding:15px;border-radius:10px;font-weight:800;cursor:pointer}
+
+/* PREMIUM */
+.prem-bx{background:linear-gradient(180deg,rgba(20,10,10,1) 0%,rgba(5,2,2,1) 100%);border:1px solid var(--gd);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 0 20px rgba(255,215,0,.2)}
+.prem-h{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,215,0,.2);padding-bottom:12px;margin-bottom:15px}
+.prem-t{font-size:14px;font-weight:800;color:var(--gd);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.p-st{font-size:10px;padding:4px 8px;border-radius:20px;border:1px solid #555;color:#888;font-weight:700}
+.p-st.act{background:rgba(255,215,0,.1);border-color:var(--gd);color:var(--gd)}
+.in-g{display:flex;gap:10px}
+.in-g input{flex:1;background:#050202;border:1px solid #333;color:#fff;padding:12px;border-radius:8px;outline:none;font-family:'Share Tech Mono',monospace}
+.btn-act{background:var(--gd);color:#000;border:none;padding:0 15px;border-radius:8px;font-weight:800;cursor:pointer}
+.vip-l{margin-top:20px;opacity:.4;pointer-events:none;transition:.5s;filter:grayscale(1)}
+.vip-l.unl{opacity:1;pointer-events:auto;filter:grayscale(0)}
+.vip-i{display:flex;justify-content:space-between;align-items:center;background:var(--cd);padding:15px;border-radius:12px;margin-bottom:10px;border:1px solid rgba(255,215,0,.1)}
+.v-i h4{font-size:14px;color:#fff;margin-bottom:3px;display:flex;align-items:center;gap:5px}
+.v-i h4 span{background:rgba(255,215,0,.1);color:var(--gd);font-size:9px;padding:2px 5px;border-radius:4px}
+.v-i p{font-size:10px;color:var(--mut)}
+
+/* INFO */
+.prof{background:var(--cd);border:1px solid var(--rd);border-radius:16px;text-align:center;overflow:hidden;padding-bottom:20px;position:relative}
+.pr-h{height:80px;background:linear-gradient(135deg,#8e0e00,#000);border-bottom:2px solid var(--rd)}
+.pr-av{width:80px;height:80px;border-radius:50%;background:#140a0a;border:3px solid var(--rd);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--rd);position:absolute;top:40px;left:50%;transform:translateX(-50%);box-shadow:0 0 20px var(--rg)}
+.pr-b{padding:50px 20px 0}
+.pr-n{font-size:20px;font-weight:800;text-transform:uppercase}
+.pr-r{font-size:11px;color:var(--rd);font-weight:700;margin-bottom:15px}
+
+/* TOAST */
+#tst{visibility:hidden;min-width:250px;background:rgba(10,5,5,.95);color:#fff;text-align:center;border-radius:8px;padding:15px 20px;position:fixed;z-index:9999;left:50%;bottom:30px;transform:translateX(-50%);font-size:13px;font-weight:700;font-family:'Share Tech Mono',monospace;opacity:0;transition:.3s;border:1px solid var(--rd);border-left:5px solid var(--rd);box-shadow:0 0 20px var(--rg)}
+#tst.show{visibility:visible;opacity:1;bottom:50px}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- TÂM ẢO OVERLAY -->
+<div id="va-overlay">
+    <div class="va-ring">
+        <div class="va-cross-h"></div>
+        <div class="va-cross-v"></div>
+        <div class="va-dot"></div>
+    </div>
+</div>
+
+<div id="load">
+    <div class="ld-i"><i class="fa-solid fa-crosshairs"></i></div>
+    <div class="ld-p">ĐANG KHỞI TẠO HỆ THỐNG...</div>
+    <div class="ld-bg"><div class="ld-fl" id="ld-fl"></div></div>
+    <div class="ld-p" id="ld-p">0%</div>
+</div>
+
+<div id="pass-sc" class="hide">
+    <div class="ps-bx">
+        <i class="fa-solid fa-shield-halved" style="font-size:40px;color:var(--rd);margin-bottom:15px;"></i>
+        <h2>NHẬP MẬT KHẨU</h2>
+        <input type="password" id="p-in" class="ps-in" placeholder="Pass...">
+        <button class="btn-ps" onclick="checkPass()">TRUY CẬP</button>
+    </div>
+</div>
+
+<div id="inj">
+    <div id="mtx-logs"></div>
+    <div class="inj-ok" id="inj-ok">
+        <i class="fa-solid fa-check-circle" style="font-size:40px;margin-bottom:10px;"></i>
+        <h2>TIÊM DATA THÀNH CÔNG!</h2>
+    </div>
+</div>
+
+<div id="tst">Thông báo</div>
+
+<div class="app" id="app">
+    <div class="nav">
+        <div class="nav-b act" onclick="goTab('home',this)"><i class="fa-solid fa-house"></i>Home</div>
+        <div class="nav-b" onclick="goTab('func',this)"><i class="fa-solid fa-bolt"></i>Function</div>
+        <div class="nav-b" onclick="goTab('fle',this)"><i class="fa-solid fa-clock"></i>Fleatime</div>
+        <div class="nav-b prem" onclick="goTab('prem',this)"><i class="fa-solid fa-crown"></i>Premium</div>
+        <div class="nav-b" onclick="goTab('info',this)"><i class="fa-solid fa-circle-info"></i>Info</div>
+    </div>
+
+    <div class="logo">
+        <div class="lg-c"><i class="fa-solid fa-crosshairs"></i></div>
+        <div class="lg-t">M LOCK <span>DMINH</span></div>
+        <div class="lg-v"><i class="fa-solid fa-bolt"></i> Phiên bản V2 Premium</div>
+    </div>
+
+    <!-- HOME -->
+    <div id="tab-home" class="tab act">
+        <div class="sec-t"><i class="fa-solid fa-house"></i> TRANG CHỦ</div>
+        <div class="cd" style="border-color:var(--gr);background:rgba(0,255,136,.05);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <h3 style="color:var(--gr);font-size:14px;text-transform:uppercase;">Hệ thống an toàn</h3>
+                <p style="font-size:10px;color:var(--mut);">Anti-Ban & Bypass hoạt động</p>
+            </div>
+            <i class="fa-solid fa-shield-halved" style="font-size:30px;color:var(--gr);"></i>
+        </div>
+        <div class="cd">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;"><span style="color:var(--mut);">Trạng thái Key:</span><span style="color:var(--gd);font-weight:bold;"><i class="fa-solid fa-crown"></i> ĐÃ KÍCH HOẠT</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;"><span style="color:var(--mut);">Thời hạn:</span><span style="color:var(--rd);font-weight:bold;">Vĩnh viễn</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--mut);">Bản game:</span><span style="color:var(--gr);font-weight:bold;">Đã nhận diện (OB54)</span></div>
+        </div>
+        <button class="act-b" style="width:100%;background:var(--rd);color:#fff;font-size:15px;padding:15px;border-radius:12px;margin-bottom:20px;" onclick="runMatrix()">
+            <i class="fa-solid fa-syringe"></i> TIÊM DỮ LIỆU VÀO GAME
+        </button>
+    </div>
+
+    <!-- FUNCTION -->
+    <div id="tab-func" class="tab">
+        <div class="sec-t"><i class="fa-solid fa-bolt"></i> CHỨC NĂNG</div>
+        <div class="grid">
+            <div class="f-c"><div class="f-h"><div class="f-t"><i class="fa-solid fa-crosshairs"></i>AimLock</div><label class="sw"><input type="checkbox" onchange="tog(this,'AimLock')"><span class="sl"></span></label></div><div class="f-d">Khóa Tâm</div><div class="f-s">OFF</div></div>
+            <div class="f-c"><div class="f-h"><div class="f-t"><i class="fa-solid fa-rotate-right"></i>Fix Lỗi</div><label class="sw"><input type="checkbox" onchange="tog(this,'Fix Lỗi')"><span class="sl"></span></label></div><div class="f-d">Sửa lỗi</div><div class="f-s">OFF</div></div>
+            <div class="f-c"><div class="f-h"><div class="f-t"><i class="fa-solid fa-wave-square"></i>Fix Rung</div><label class="sw"><input type="checkbox" onchange="tog(this,'Fix Rung')"><span class="sl"></span></label></div><div class="f-d">Chống rung</div><div class="f-s">OFF</div></div>
+            <div class="f-c"><div class="f-h"><div class="f-t"><i class="fa-solid fa-bug"></i>Fix Lag</div><label class="sw"><input type="checkbox" onchange="tog(this,'Fix Lag')"><span class="sl"></span></label></div><div class="f-d">Giảm giật</div><div class="f-s">OFF</div></div>
+            <div class="f-c"><div class="f-h"><div class="f-t"><i class="fa-solid fa-magnifying-glass"></i>Lắc Đạn</div><label class="sw"><input type="checkbox" onchange="tog(this,'Lắc Đạn')"><span class="sl"></span></label></div><div class="f-d">Chỉnh ngắm</div><div class="f-s">OFF</div></div>
+            <div class="f-c"><div class="f-h"><div class="f-t"><i class="fa-solid fa-feather"></i>Nhẹ Tâm</div><label class="sw"><input type="checkbox" onchange="tog(this,'Nhẹ Tâm')"><span class="sl"></span></label></div><div class="f-d">Tâm nhẹ</div><div class="f-s">OFF</div></div>
+            <div class="f-c"><div class="f-h"><div class="f-t"><i class="fa-solid fa-anchor"></i>Ghìm Tâm</div><label class="sw"><input type="checkbox" onchange="tog(this,'Ghìm Tâm')"><span class="sl"></span></label></div><div class="f-d">Tâm chắc</div><div class="f-s">OFF</div></div>
+            <div class="f-c"><div class="f-h"><div class="f-t"><i class="fa-solid fa-rocket"></i>Mượt Máy</div><label class="sw"><input type="checkbox" onchange="tog(this,'Mượt Máy')"><span class="sl"></span></label></div><div class="f-d">Tối ưu FPS</div><div class="f-s">OFF</div></div>
+        </div>
+        
+        <div class="sl-g"><div class="sl-h"><span>AIMLOCK</span><span class="sl-v" id="v-aim">200</span></div><input type="range" min="0" max="300" value="200" oninput="document.getElementById('v-aim').innerText=this.value"></div>
+        <div class="sl-g"><div class="sl-h"><span>SENSITIVY</span><span class="sl-v" id="v-sens">100</span></div><input type="range" min="0" max="200" value="100" oninput="document.getElementById('v-sens').innerText=this.value"></div>
+        <div class="sl-g"><div class="sl-h"><span>FIX ALL</span><span class="sl-v" id="v-fixall">100</span></div><input type="range" min="0" max="200" value="100" oninput="document.getElementById('v-fixall').innerText=this.value"></div>
+
+        <div style="display:flex;gap:10px;">
+            <div class="act-b act" style="flex:1;background:rgba(255,26,26,.15);border-color:var(--rd);color:var(--rd);" id="v-off" onclick="tVAim('off')">TÂM ẢO OFF</div>
+            <div class="act-b" style="flex:1;" id="v-on" onclick="tVAim('on')">TÂM ẢO ON</div>
+        </div>
+    </div>
+
+    <!-- FLEATIME -->
+    <div id="tab-fle" class="tab">
+        <div class="sec-t"><i class="fa-solid fa-clock"></i> FLEATIME</div>
+        <div class="cd">
+            <div class="sel-g"><div class="sel-l"><i class="fa-solid fa-sliders"></i> HỆ ĐIỀU HÀNH</div><select id="os" class="sel-b" onchange="updDPI()"><option value="Android">Android</option><option value="iOS">iOS</option></select></div>
+            <div class="sel-g"><div class="sel-l"><i class="fa-solid fa-mobile-screen"></i> DÒNG MÁY (DPI)</div><select id="dev" class="sel-b" onchange="updInfo()"></select></div>
+        </div>
+        <div style="font-size:11px;color:var(--mut);margin-bottom:20px;" id="d-info">DEVICE: ...</div>
+        
+        <div class="stats">
+            <div class="st"><div class="st-t">CPU</div><div class="st-v" id="cpu">85%</div></div>
+            <div class="st"><div class="st-t">RAM</div><div class="st-v" id="ram">92%</div></div>
+        </div>
+        
+        <div class="acts">
+            <div class="act-b" id="b-ram" onclick="clean('ram')"><i class="fa-solid fa-broom"></i>Dọn RAM</div>
+            <div class="act-b" id="b-cpu" onclick="clean('cpu')"><i class="fa-solid fa-microchip"></i>Dọn CPU</div>
+            <div class="act-b" id="b-fps" onclick="tLockFps()"><i class="fa-solid fa-lock" id="i-fps"></i><span id="t-fps">Lock FPS<br>OFF</span></div>
+        </div>
+        
+        <div class="cons" id="cons"></div>
+        
+        <div class="sec-t" style="font-size:12px;"><i class="fa-solid fa-gamepad"></i> BOOSTER</div>
+        <div class="bst-g">
+            <div class="bst" onclick="selBst(this,'FF')"><i class="fa-solid fa-fire"></i>FF</div>
+            <div class="bst" onclick="selBst(this,'FF MAX')"><i class="fa-solid fa-fire-flame-curved"></i>FF MAX</div>
+            <div class="bst act" onclick="selBst(this,'GAME')"><i class="fa-brands fa-xbox"></i>GAME</div>
+        </div>
+        <button class="btn-go" onclick="runBst()"><i class="fa-solid fa-wrench"></i> Khởi động tối ưu</button>
+    </div>
+
+    <!-- PREMIUM -->
+    <div id="tab-prem" class="tab">
+        <div class="sec-t" style="color:var(--gd);"><i class="fa-solid fa-crown"></i> KÍCH HOẠT VIP</div>
+        <div class="prem-bx">
+            <div class="prem-h"><div class="prem-t"><i class="fa-solid fa-key"></i> KEY VIP</div><div class="p-st" id="p-st">CHƯA KÍCH HOẠT</div></div>
+            <div class="in-g"><input type="text" id="v-key" placeholder="Nhập key..."><button class="btn-act" onclick="checkVip()"><i class="fa-solid fa-unlock"></i></button></div>
+        </div>
+        
+        <div class="vip-l" id="v-list">
+            <div class="vip-i"><div class="v-i"><h4>AIM BỤNG <span>VIP</span></h4><p>Định vị tâm vùng bụng</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'AIM BỤNG')"><span class="sl"></span></label></div>
+            <div class="vip-i"><div class="v-i"><h4>AIM CỔ <span>VIP</span></h4><p>Chỉnh sát thương cổ</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'AIM CỔ')"><span class="sl"></span></label></div>
+            <div class="vip-i"><div class="v-i"><h4>AIM NGỰC <span>VIP</span></h4><p>Khóa góc trung tâm ngực</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'AIM NGỰC')"><span class="sl"></span></label></div>
+            <div class="vip-i"><div class="v-i"><h4>AIM DRAG <span>VIP</span></h4><p>Trợ lực vuốt tâm</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'AIM DRAG')"><span class="sl"></span></label></div>
+            <div class="vip-i"><div class="v-i"><h4>AIMBODY <span>VIP</span></h4><p>Tự động bám thân</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'AIMBODY')"><span class="sl"></span></label></div>
+            <div class="vip-i"><div class="v-i"><h4>AIMSLIENT <span>VIP</span></h4><p>Ghìm tâm không giật</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'AIMSLIENT')"><span class="sl"></span></label></div>
+            <div class="vip-i"><div class="v-i"><h4>AIM BOT <span>VIP</span></h4><p>Thuật toán quét mục tiêu</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'AIM BOT')"><span class="sl"></span></label></div>
+            <div class="vip-i"><div class="v-i"><h4>ĐỊNH VỊ FFTH <span>VIP</span></h4><p>Radar vị trí FF Thường</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'ĐỊNH VỊ FFTH')"><span class="sl"></span></label></div>
+            <div class="vip-i"><div class="v-i"><h4>ĐỊNH VỊ FFMAX <span>VIP</span></h4><p>Radar vị trí FF Max</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'ĐỊNH VỊ FFMAX')"><span class="sl"></span></label></div>
+            <div class="vip-i"><div class="v-i"><h4>ANTIBAN VIP <span>VIP</span></h4><p>Bảo vệ tài khoản</p></div><label class="sw"><input type="checkbox" disabled onchange="vipTog(this,'ANTIBAN VIP')"><span class="sl"></span></label></div>
+        </div>
+    </div>
+
+    <!-- INFO -->
+    <div id="tab-info" class="tab">
+        <div class="sec-t"><i class="fa-solid fa-circle-info"></i> THÔNG TIN</div>
+        <div class="prof">
+            <div class="pr-h"></div>
+            <div class="pr-av"><i class="fa-solid fa-user-secret"></i></div>
+            <div class="pr-b">
+                <div class="pr-n">DMINH</div>
+                <div class="pr-r">DEVELOPER</div>
+                <p style="font-size:12px;color:var(--mut);margin-bottom:20px;">Hệ thống tối ưu game & Mod Menu.</p>
+                <div style="font-size:11px;color:#555;">Phiên bản: M LOCK DMINH <b style="color:var(--gd);">V2 Premium</b></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 1. LOADING
+let p=0,l=document.getElementById('ld-fl'),lt=document.getElementById('ld-p');
+let li=setInterval(()=>{
+    p+=Math.floor(Math.random()*10)+5;
+    if(p>100)p=100;
+    l.style.width=p+'%';lt.innerText=p+'%';
+    if(p===100){clearInterval(li);setTimeout(()=>{document.getElementById('load').classList.add('hide');document.getElementById('pass-sc').classList.remove('hide');},800);}
+},80);
+
+// 2. PASS
+function checkPass(){
+    let v=document.getElementById('p-in').value;
+    if(v==='DMINH2'){
+        document.getElementById('pass-sc').classList.add('hide');
+        document.getElementById('app').classList.add('show');
+        setTimeout(()=>addLog('Hệ thống khởi động OK!','s'),500);
+    }else{
+        toast('MẬT KHẨU SAI!');
+        document.getElementById('p-in').style.borderColor='red';
+        setTimeout(()=>document.getElementById('p-in').style.borderColor='#333',1000);
+    }
+}
+
+// 3. TOAST
+function toast(m,t='e'){
+    let x=document.getElementById('tst');
+    x.innerHTML=`<span style="color:${t==='s'?'#00ff88':'#ff1a1a'};">[SYS]</span> ${m}`;
+    x.className="show";
+    setTimeout(()=>x.className="",2500);
+}
+
+// 4. TABS
+function goTab(t,e){
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('act'));
+    document.getElementById('tab-'+t).classList.add('act');
+    document.querySelectorAll('.nav-b').forEach(x=>x.classList.remove('act'));
+    e.classList.add('act');
+    window.scrollTo(0,0);
+}
+
+// 5. MATRIX INJECT
+function runMatrix(){
+    let o=document.getElementById('inj'),l=document.getElementById('mtx-logs'),ok=document.getElementById('inj-ok');
+    o.classList.add('act');l.innerHTML='';ok.style.display='none';
+    const txt=["Init...","Bypass AC...","Inject libaim.so","Patch offset...","Hooking...","Encrypt...","Verify..."];
+    let i=0,it=setInterval(()=>{
+        let p=document.createElement('p');p.className='mtx';p.innerText=`> [${new Date().toLocaleTimeString()}] ${txt[i]} OK`;l.appendChild(p);l.scrollTop=l.scrollHeight;i++;
+        if(i>=txt.length){clearInterval(it);setTimeout(()=>{ok.style.display='block';setTimeout(()=>{o.classList.remove('act');toast('Tiêm Data OK!','s');addLog('Tiêm Data thành công!','s');},1500);},500);}
+    },300);
+}
+
+// 6. FUNCTION
+function tog(e,n){
+    let s=e.closest('.f-c').querySelector('.f-s');
+    if(e.checked){
+        s.innerText='ON';s.classList.add('on');addLog(`[BẬT] ${n}`,'s');toast(`Đã bật: ${n}`,'s');
+    }else{
+        s.innerText='OFF';s.classList.remove('on');addLog(`[TẮT] ${n}`,'w');toast(`Đã tắt: ${n}`);
+    }
+}
+
+// BẬT TẮT TÂM ẢO
+function tVAim(s){
+    let o=document.getElementById('v-off'),n=document.getElementById('v-on'),va=document.getElementById('va-overlay');
+    if(s==='on'){
+        n.classList.add('act');n.style.background='rgba(255,26,26,.15)';n.style.borderColor='var(--rd)';n.style.color='var(--rd)';
+        o.classList.remove('act');o.style.background='';o.style.borderColor='';o.style.color='';
+        va.classList.add('active'); // Hiện tâm ảo
+        addLog('Bật Tâm Ảo','s');toast('Đã bật Tâm Ảo','s');
+    }else{
+        o.classList.add('act');o.style.background='rgba(255,26,26,.15)';o.style.borderColor='var(--rd)';o.style.color='var(--rd)';
+        n.classList.remove('act');n.style.background='';n.style.borderColor='';n.style.color='';
+        va.classList.remove('active'); // Ẩn tâm ảo
+        addLog('Tắt Tâm Ảo','w');toast('Đã tắt Tâm Ảo');
+    }
+}
+
+// 7. FLEATIME
+const db={
+    'Android':['Samsung S22','Galaxy A21s','Xiaomi 13','Oppo Reno','Realme C67','Asus ROG 6'],
+    'iOS':['iPhone 6s Plus','iPhone 11','iPhone 12 Pro Max','iPhone 13','iPhone 14 Pro','iPad Pro']
+};
+function updDPI(){
+    let os=document.getElementById('os').value,d=document.getElementById('dev');d.innerHTML='';
+    db[os].forEach(x=>{let op=document.createElement('option');op.value=x;op.innerText=x;d.appendChild(op);});
+    updInfo();
+}
+function updInfo(){
+    let d=document.getElementById('dev').value;document.getElementById('d-info').innerText='DEVICE: '+d.toUpperCase();addLog(`Tải DPI cho: ${d}`,'s');
+}
+function clean(t){
+    let b=document.getElementById('b-'+t),v=document.getElementById(t);
+    b.classList.add('load');b.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i>...';
+    addLog(`Bắt đầu dọn ${t.toUpperCase()}...`,'w');toast(`Đang dọn ${t.toUpperCase()}...`,'w');
+    setTimeout(()=>{
+        b.classList.remove('load');b.innerHTML=t==='cpu'?'<i class="fa-solid fa-microchip"></i>Dọn CPU':'<i class="fa-solid fa-broom"></i>Dọn RAM';
+        v.innerText=(Math.floor(Math.random()*15)+10)+'%';v.style.color='var(--gr)';
+        addLog(`Dọn ${t.toUpperCase()} OK!`,'s');toast(`Đã dọn dẹp ${t.toUpperCase()}!`,'s');
+        setTimeout(()=>v.style.color='',3000);
+    },1500);
+}
+let fpsL=false;
+function tLockFps(){
+    let b=document.getElementById('b-fps'),i=document.getElementById('i-fps'),t=document.getElementById('t-fps');
+    fpsL=!fpsL;
+    if(fpsL){
+        b.classList.add('lock');i.className='fa-solid fa-lock-open';t.innerHTML='Lock FPS<br>ON';
+        addLog('Lock FPS BẬT','s');toast('Đã bật Lock FPS','s');
+    }else{
+        b.classList.remove('lock');i.className='fa-solid fa-lock';t.innerHTML='Lock FPS<br>OFF';
+        addLog('Lock FPS TẮT','w');toast('Đã tắt Lock FPS');
+    }
+}
+function selBst(e,n){
+    document.querySelectorAll('.bst').forEach(x=>x.classList.remove('act'));
+    e.classList.add('act');
+    addLog(`Chọn Booster: ${n}`,'i');
+}
+function runBst(){
+    toast('Đang khởi động tối ưu...','w');addLog('Tối ưu hóa tài nguyên...','w');
+    setTimeout(()=>{toast('Khởi động tối ưu thành công!','s');addLog('Khởi động tối ưu thành công!','s');},2000);
+}
+
+// 8. PREMIUM
+function checkVip(){
+    let k=document.getElementById('v-key').value,s=document.getElementById('p-st'),l=document.getElementById('v-list');
+    if(k==='DMINH123'){
+        toast('Kích hoạt VIP thành công!','s');addLog('Kích hoạt VIP thành công!','s');
+        s.innerText='ĐÃ KÍCH HOẠT';s.classList.add('act');l.classList.add('unl');
+        document.querySelectorAll('.vip-l input').forEach(x=>x.disabled=false);
+        document.getElementById('v-key').value='********';document.getElementById('v-key').disabled=true;
+    }else{
+        toast('KEY KHÔNG CHÍNH XÁC!');document.getElementById('v-key').style.borderColor='red';
+        setTimeout(()=>document.getElementById('v-key').style.borderColor='#333',1000);
+    }
+}
+function vipTog(e,n){
+    if(e.checked){ toast(`Đã bật VIP: ${n}`,'s'); addLog(`[BẬT] VIP ${n}`,'s'); }
+    else { toast(`Đã tắt VIP: ${n}`); addLog(`[TẮT] VIP ${n}`,'w'); }
+}
+
+// 9. LOG
+function addLog(t,ty='i'){
+    let c=document.getElementById('cons'),i=ty==='s'?'✔':(ty==='w'?'⚠':'>'),cl=ty==='s'?'l-s':(ty==='w'?'l-w':'');
+    let d=document.createElement('div');d.innerHTML=`<span class="l-t">[${new Date().toLocaleTimeString()}]</span> <span class="${cl}">${i} ${t}</span>`;c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+updDPI();
+</script>
+</body>
+</html>
